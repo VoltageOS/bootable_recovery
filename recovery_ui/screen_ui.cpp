@@ -602,7 +602,7 @@ void ScreenRecoveryUI::SetColor(UIElement e) const {
         gr_color(0x42, 0x85, 0xf4, 255);
       break;
     case UIElement::MENU_SEL_BG_ACTIVE:
-      gr_color(0, 156, 100, 255);
+      gr_color(0, 254, 230, 0);
       break;
     case UIElement::MENU_SEL_FG:
         gr_color(0xd8, 0xd8, 0xd8, 255);
@@ -822,7 +822,7 @@ void ScreenRecoveryUI::draw_menu_and_text_buffer_locked(
   int y = margin_height_;
 
   if (menu_) {
-    auto& logo = fastbootd_logo_enabled_ ? fastbootd_logo_ : default_logo;
+    auto& logo = fastbootd_logo_enabled_ ? fastbootd_logo_ : voltage_logo_;
     auto logo_width = gr_get_width(logo.get());
     auto logo_height = gr_get_height(logo.get());
     auto centered_x = ScreenWidth() / 2 - logo_width / 2;
@@ -1178,12 +1178,14 @@ bool ScreenRecoveryUI::Init(const std::string& locale) {
   no_command_text_ = LoadLocalizedBitmap("no_command_text");
   error_text_ = LoadLocalizedBitmap("error_text");
 
-  default_logo = LoadBitmap("logo_image");
   back_icon_ = LoadBitmap("ic_back");
   back_icon_sel_ = LoadBitmap("ic_back_sel");
   if (android::base::GetBoolProperty("ro.boot.dynamic_partitions", false) ||
       android::base::GetBoolProperty("ro.fastbootd.available", false)) {
+    voltage_logo_ = LoadBitmap("logo_image_switch");
     fastbootd_logo_ = LoadBitmap("fastbootd");
+  } else {
+    voltage_logo_ = LoadBitmap("logo_image");
   }
 
   // Background text for "installing_update" could be "installing update" or
@@ -1518,8 +1520,8 @@ int ScreenRecoveryUI::SelectMenu(const Point& p) {
   if (menu_) {
     if (!menu_->IsMain()) {
       // Back arrow hitbox
-      const static int logo_width = gr_get_width(default_logo.get());
-      const static int logo_height = gr_get_height(default_logo.get());
+      const static int logo_width = gr_get_width(voltage_logo_.get());
+      const static int logo_height = gr_get_height(voltage_logo_.get());
       const static int icon_w = gr_get_width(back_icon_.get());
       const static int icon_h = gr_get_height(back_icon_.get());
       const static int centered_x = ScreenWidth() / 2 - logo_width / 2;

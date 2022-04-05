@@ -74,7 +74,6 @@ status_t EmulatedVolume::doMount() {
         return -EIO;
     }
     if (BindMount(bindPath, getPath()) != OK) {
-        PLOG(ERROR) << getId() << " failed to bind mount " << bindPath << " on " << getPath();
         ForceUnmount(kStagingPath);
         return -EIO;
     }

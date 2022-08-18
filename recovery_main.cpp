@@ -463,6 +463,10 @@ int main(int argc, char** argv) {
     device->RemoveMenuItemForAction(Device::ENTER_RESCUE);
   }
 
+  if (!android::base::GetBoolProperty("ro.build.ab_update", false)) {
+    device->RemoveMenuItemForAction(Device::SWAP_SLOT);
+  }
+
   ui->SetBackground(RecoveryUI::NONE);
   if (show_text) ui->ShowText(true);
 
@@ -483,8 +487,9 @@ int main(int argc, char** argv) {
 
   while (true) {
     // We start adbd in recovery for the device with userdebug build or a unlocked bootloader.
-    std::string usb_config =
-        fastboot ? "fastboot" : IsRoDebuggable() || IsDeviceUnlocked() ? "adb" : "none";
+    std::string usb_config = fastboot                                 ? "fastboot"
+                             : IsRoDebuggable() || IsDeviceUnlocked() ? "adb"
+                                                                      : "none";
     std::string usb_state = android::base::GetProperty("sys.usb.state", "none");
     if (fastboot) {
       device->PreFastboot();

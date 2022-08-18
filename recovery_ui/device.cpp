@@ -45,6 +45,7 @@ static std::vector<menu_action_t> g_advanced_actions{
   { "Mount/unmount system", Device::MOUNT_SYSTEM },
   { "View recovery logs", Device::VIEW_RECOVERY_LOGS },
   { "Enable ADB", Device::ENABLE_ADB },
+  { "Switch slot", Device::SWAP_SLOT },
   { "Run graphics test", Device::RUN_GRAPHICS_TEST },
   { "Run locale test", Device::RUN_LOCALE_TEST },
   { "Enter rescue", Device::ENTER_RESCUE },
@@ -83,10 +84,11 @@ void Device::GoHome() {
   PopulateMenuItems();
 }
 
-static void RemoveMenuItemForAction(std::vector<menu_action_t>& menu, Device::BuiltinAction action) {
-  menu.erase(
-      std::remove_if(menu.begin(), menu.end(),
-                     [action](const auto& entry) { return entry.second == action; }), menu.end());
+static void RemoveMenuItemForAction(std::vector<menu_action_t>& menu,
+                                    Device::BuiltinAction action) {
+  menu.erase(std::remove_if(menu.begin(), menu.end(),
+                            [action](const auto& entry) { return entry.second == action; }),
+             menu.end());
   CHECK(!menu.empty());
 }
 
@@ -102,11 +104,11 @@ const std::vector<std::string>& Device::GetMenuItems() {
 
 const std::vector<std::string>& Device::GetMenuHeaders() {
   if (current_menu_ == &g_update_actions)
-      return g_update_header;
+    return g_update_header;
   else if (current_menu_ == &g_wipe_actions)
-      return g_wipe_header;
+    return g_wipe_header;
   else if (current_menu_ == &g_advanced_actions)
-      return g_advanced_header;
+    return g_advanced_header;
   return g_main_header;
 }
 

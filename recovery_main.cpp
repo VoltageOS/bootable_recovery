@@ -73,6 +73,10 @@ static bool IsDeviceUnlocked() {
   return "orange" == android::base::GetProperty("ro.boot.verifiedbootstate", "");
 }
 
+std::string get_build_type() {
+  return android::base::GetProperty("ro.build.type", "");
+}
+
 static void UiLogger(android::base::LogId log_buffer_id, android::base::LogSeverity severity,
                      const char* tag, const char* file, unsigned int line, const char* message) {
   android::base::KernelLogger(log_buffer_id, severity, tag, file, line, message);
@@ -376,7 +380,8 @@ int main(int argc, char** argv) {
         } else if (option == "reason") {
           reason = optarg;
         } else if (option == "fastboot" &&
-                   android::base::GetBoolProperty("ro.boot.dynamic_partitions", false)) {
+                   (android::base::GetBoolProperty("ro.boot.dynamic_partitions", false) ||
+                    android::base::GetBoolProperty("ro.fastbootd.available", false))) {
           fastboot = true;
         }
         break;
@@ -440,12 +445,26 @@ int main(int argc, char** argv) {
     device->RemoveMenuItemForAction(Device::WIPE_CACHE);
   }
 
-  if (!android::base::GetBoolProperty("ro.boot.dynamic_partitions", false)) {
+  if (android::base::GetBoolProperty("ro.build.ab_update", false)) {
+    // There's not much point in formatting the active slot's system partition
+    // because ROMs are flashed to the inactive slot. Removing the menu option
+    // prevents users from accidentally trashing a functioning ROM.
+    device->RemoveMenuItemForAction(Device::WIPE_SYSTEM);
+  }
+
+  if (!android::base::GetBoolProperty("ro.boot.dynamic_partitions", false) &&
+      !android::base::GetBoolProperty("ro.fastbootd.available", false)) {
     device->RemoveMenuItemForAction(Device::ENTER_FASTBOOT);
   }
 
-  if (!IsRoDebuggable()) {
+  if (get_build_type() != "eng") {
+    device->RemoveMenuItemForAction(Device::RUN_GRAPHICS_TEST);
+    device->RemoveMenuItemForAction(Device::RUN_LOCALE_TEST);
     device->RemoveMenuItemForAction(Device::ENTER_RESCUE);
+  }
+
+  if (!android::base::GetBoolProperty("ro.build.ab_update", false)) {
+    device->RemoveMenuItemForAction(Device::SWAP_SLOT);
   }
 
   ui->SetBackground(RecoveryUI::NONE);
@@ -468,8 +487,9 @@ int main(int argc, char** argv) {
 
   while (true) {
     // We start adbd in recovery for the device with userdebug build or a unlocked bootloader.
-    std::string usb_config =
-        fastboot ? "fastboot" : IsRoDebuggable() || IsDeviceUnlocked() ? "adb" : "none";
+    std::string usb_config = fastboot                                 ? "fastboot"
+                             : IsRoDebuggable() || IsDeviceUnlocked() ? "adb"
+                                                                      : "none";
     std::string usb_state = android::base::GetProperty("sys.usb.state", "none");
     if (fastboot) {
       device->PreFastboot();
@@ -538,7 +558,7 @@ int main(int argc, char** argv) {
       }
 
       case Device::ENTER_FASTBOOT:
-        if (android::fs_mgr::LogicalPartitionsMapped()) {
+        if (logical_partitions_mapped()) {
           ui->Print("Partitions may be mounted - rebooting to enter fastboot.");
           Reboot("fastboot");
         } else {
@@ -550,6 +570,7 @@ int main(int argc, char** argv) {
       case Device::ENTER_RECOVERY:
         LOG(INFO) << "Entering recovery";
         fastboot = false;
+        device->GoHome();
         break;
 
       case Device::REBOOT:

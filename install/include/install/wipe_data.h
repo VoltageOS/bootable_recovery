@@ -31,5 +31,5 @@ bool WipeCache(RecoveryUI* ui, const std::function<bool()>& confirm,
 bool WipeData(Device* device, bool keep_memtag_mode = false, std::string_view new_fstype = "");
 
 // Returns true on success.
-bool WipeCache(RecoveryUI* ui, const std::function<bool()>& confirm,
-               std::string_view new_fstype = "");
+bool WipeSystem(RecoveryUI* ui, const std::function<bool()>& confirm,
+                std::string_view new_fstype = "");
